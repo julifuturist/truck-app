@@ -162,7 +162,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "https://localhost:3000",
     # Production frontend domains
-    "https://truck-logs-8ygpgzvzj-juli-futurist-projects.vercel.app",
+    "https://truck-logs.vercel.app",
 ]
 
 # Allow all Vercel preview deployments (they use random subdomains)
