@@ -19,8 +19,6 @@ import {
   Hotel,
   Schedule,
   Route,
-  Warning,
-  CheckCircle,
   Navigation,
 } from '@mui/icons-material';
 import Paper from '@mui/material/Paper';

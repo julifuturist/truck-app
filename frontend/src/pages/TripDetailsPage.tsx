@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Typography,
@@ -17,12 +17,11 @@ import {
   Paper,
   Tabs,
   Tab,
-} from '@mui/material';
-import { Grid } from '@mui/material';
+} from "@mui/material";
+import { Grid } from "@mui/material";
 import {
   LocalGasStation,
   Hotel,
-  Route,
   Schedule,
   Navigation,
   PlayArrow,
@@ -30,14 +29,21 @@ import {
   CheckCircle,
   Warning,
   Info,
-} from '@mui/icons-material';
-import { useParams, useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+} from "@mui/icons-material";
+import { useParams, useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 
-import { Trip, RouteCalculation, FuelStop, RestStop, ELDLog, ELDLogSheet } from '../types';
-import { tripAPI, eldLogAPI } from '../services/api';
-import RouteMap from '../components/maps/RouteMap';
-import ELDLogChart from '../components/eld/ELDLogChart';
+import {
+  Trip,
+  RouteCalculation,
+  FuelStop,
+  RestStop,
+  ELDLog,
+  ELDLogSheet,
+} from "../types";
+import { tripAPI, eldLogAPI } from "../services/api";
+import RouteMap from "../components/maps/RouteMap";
+import ELDLogChart from "../components/eld/ELDLogChart";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -64,23 +70,19 @@ function TabPanel(props: TabPanelProps) {
 const TripDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   const [trip, setTrip] = useState<Trip | null>(null);
   const [route, setRoute] = useState<RouteCalculation | null>(null);
   const [eldLogs, setEldLogs] = useState<ELDLog[]>([]);
-  const [logSheets, setLogSheets] = useState<{[key: string]: ELDLogSheet}>({});
+  const [logSheets, setLogSheets] = useState<{ [key: string]: ELDLogSheet }>(
+    {}
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      loadTripDetails();
-    }
-  }, [id]);
-
-  const loadTripDetails = async () => {
+  const loadTripDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -94,37 +96,46 @@ const TripDetailsPage: React.FC = () => {
         const routeResponse = await tripAPI.getRouteDetails(id!);
         setRoute(routeResponse.data);
       } catch (routeError) {
-        console.warn('Route details not available:', routeError);
+        console.warn("Route details not available:", routeError);
       }
 
       // Load ELD logs
       try {
         const eldResponse = await eldLogAPI.getAll({});
-        const filteredLogs = eldResponse.data.results?.filter(log => log.trip === id) || [];
+        const filteredLogs =
+          eldResponse.data.results?.filter((log) => log.trip === id) || [];
         setEldLogs(filteredLogs);
-        
+
         // Try to load log sheets for each ELD log
-        const sheets: {[key: string]: ELDLogSheet} = {};
+        const sheets: { [key: string]: ELDLogSheet } = {};
         for (const log of filteredLogs) {
           try {
             const sheetResponse = await eldLogAPI.getLogSheet(log.id);
             sheets[log.id] = sheetResponse.data;
           } catch (sheetError) {
-            console.warn(`Log sheet not available for log ${log.id}:`, sheetError);
+            console.warn(
+              `Log sheet not available for log ${log.id}:`,
+              sheetError
+            );
           }
         }
         setLogSheets(sheets);
       } catch (eldError) {
-        console.warn('ELD logs not available:', eldError);
+        console.warn("ELD logs not available:", eldError);
       }
-
     } catch (err: any) {
-      console.error('Failed to load trip details:', err);
-      setError(err.response?.data?.error || 'Failed to load trip details');
+      console.error("Failed to load trip details:", err);
+      setError(err.response?.data?.error || "Failed to load trip details");
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      loadTripDetails();
+    }
+  }, [id, loadTripDetails]);
 
   const handleStartTrip = async () => {
     try {
@@ -132,7 +143,7 @@ const TripDetailsPage: React.FC = () => {
       await tripAPI.startTrip(id!);
       await loadTripDetails(); // Refresh data
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to start trip');
+      setError(err.response?.data?.error || "Failed to start trip");
     } finally {
       setActionLoading(false);
     }
@@ -144,7 +155,7 @@ const TripDetailsPage: React.FC = () => {
       await tripAPI.completeTrip(id!);
       await loadTripDetails(); // Refresh data
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to complete trip');
+      setError(err.response?.data?.error || "Failed to complete trip");
     } finally {
       setActionLoading(false);
     }
@@ -152,21 +163,31 @@ const TripDetailsPage: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'planned': return 'info';
-      case 'in_progress': return 'warning';
-      case 'completed': return 'success';
-      case 'cancelled': return 'error';
-      default: return 'default';
+      case "planned":
+        return "info";
+      case "in_progress":
+        return "warning";
+      case "completed":
+        return "success";
+      case "cancelled":
+        return "error";
+      default:
+        return "default";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'planned': return <Schedule />;
-      case 'in_progress': return <Navigation />;
-      case 'completed': return <CheckCircle />;
-      case 'cancelled': return <Stop />;
-      default: return <Info />;
+      case "planned":
+        return <Schedule />;
+      case "in_progress":
+        return <Navigation />;
+      case "completed":
+        return <CheckCircle />;
+      case "cancelled":
+        return <Stop />;
+      default:
+        return <Info />;
     }
   };
 
@@ -183,7 +204,12 @@ const TripDetailsPage: React.FC = () => {
   if (loading) {
     return (
       <Container maxWidth="xl">
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="50vh"
+        >
           <CircularProgress />
         </Box>
       </Container>
@@ -194,9 +220,9 @@ const TripDetailsPage: React.FC = () => {
     return (
       <Container maxWidth="xl">
         <Alert severity="error" sx={{ mt: 2 }}>
-          {error || 'Trip not found'}
+          {error || "Trip not found"}
         </Alert>
-        <Button onClick={() => navigate('/trips')} sx={{ mt: 2 }}>
+        <Button onClick={() => navigate("/trips")} sx={{ mt: 2 }}>
           Back to Trips
         </Button>
       </Container>
@@ -207,7 +233,12 @@ const TripDetailsPage: React.FC = () => {
     <Container maxWidth="xl">
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
+        >
           <Box>
             <Typography variant="h4" gutterBottom>
               {trip.name}
@@ -215,17 +246,17 @@ const TripDetailsPage: React.FC = () => {
             <Box display="flex" alignItems="center" gap={1}>
               <Chip
                 icon={getStatusIcon(trip.status)}
-                label={trip.status.replace('_', ' ').toUpperCase()}
+                label={trip.status.replace("_", " ").toUpperCase()}
                 color={getStatusColor(trip.status) as any}
               />
               <Typography variant="body2" color="textSecondary">
-                Driver: {trip.driver?.name || 'Unknown'}
+                Driver: {trip.driver?.name || "Unknown"}
               </Typography>
             </Box>
           </Box>
-          
+
           <Box display="flex" gap={1}>
-            {trip.status === 'planned' && (
+            {trip.status === "planned" && (
               <Button
                 variant="contained"
                 startIcon={<PlayArrow />}
@@ -235,7 +266,7 @@ const TripDetailsPage: React.FC = () => {
                 Start Trip
               </Button>
             )}
-            {trip.status === 'in_progress' && (
+            {trip.status === "in_progress" && (
               <Button
                 variant="contained"
                 startIcon={<CheckCircle />}
@@ -245,10 +276,7 @@ const TripDetailsPage: React.FC = () => {
                 Complete Trip
               </Button>
             )}
-            <Button 
-              variant="outlined" 
-              onClick={() => navigate('/trips')}
-            >
+            <Button variant="outlined" onClick={() => navigate("/trips")}>
               Back to Trips
             </Button>
           </Box>
@@ -258,9 +286,11 @@ const TripDetailsPage: React.FC = () => {
         <Grid container spacing={3} sx={{ mb: 3 }}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
+              <CardContent sx={{ textAlign: "center" }}>
                 <Typography variant="h6" color="primary">
-                  {route ? formatDistance(route.total_distance_miles || 0) : 'N/A'}
+                  {route
+                    ? formatDistance(route.total_distance_miles || 0)
+                    : "N/A"}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   Total Distance
@@ -268,12 +298,14 @@ const TripDetailsPage: React.FC = () => {
               </CardContent>
             </Card>
           </Grid>
-          
+
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
+              <CardContent sx={{ textAlign: "center" }}>
                 <Typography variant="h6" color="primary">
-                  {route ? formatDuration(route.estimated_duration_hours || 0) : 'N/A'}
+                  {route
+                    ? formatDuration(route.estimated_duration_hours || 0)
+                    : "N/A"}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   Est. Duration
@@ -284,7 +316,7 @@ const TripDetailsPage: React.FC = () => {
 
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
+              <CardContent sx={{ textAlign: "center" }}>
                 <Typography variant="h6" color="primary">
                   {trip.current_cycle_used.toFixed(1)}h
                 </Typography>
@@ -297,7 +329,7 @@ const TripDetailsPage: React.FC = () => {
 
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card>
-              <CardContent sx={{ textAlign: 'center' }}>
+              <CardContent sx={{ textAlign: "center" }}>
                 <Typography variant="h6" color="primary">
                   {eldLogs.length}
                 </Typography>
@@ -311,8 +343,11 @@ const TripDetailsPage: React.FC = () => {
       </Box>
 
       {/* Tabs */}
-      <Paper sx={{ width: '100%' }}>
-        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+      <Paper sx={{ width: "100%" }}>
+        <Tabs
+          value={tabValue}
+          onChange={(_, newValue) => setTabValue(newValue)}
+        >
           <Tab label="Overview" />
           <Tab label="Route & Map" />
           <Tab label="ELD Logs" />
@@ -328,57 +363,76 @@ const TripDetailsPage: React.FC = () => {
                   <Typography variant="h6" gutterBottom>
                     Trip Information
                   </Typography>
-                  
+
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary">Current Location</Typography>
-                    <Typography variant="body1">{trip.current_location}</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Current Location
+                    </Typography>
+                    <Typography variant="body1">
+                      {trip.current_location}
+                    </Typography>
                   </Box>
-                  
+
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary">Pickup Location</Typography>
-                    <Typography variant="body1">{trip.pickup_location}</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Pickup Location
+                    </Typography>
+                    <Typography variant="body1">
+                      {trip.pickup_location}
+                    </Typography>
                   </Box>
-                  
+
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary">Dropoff Location</Typography>
-                    <Typography variant="body1">{trip.dropoff_location}</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Dropoff Location
+                    </Typography>
+                    <Typography variant="body1">
+                      {trip.dropoff_location}
+                    </Typography>
                   </Box>
 
                   <Divider sx={{ my: 2 }} />
 
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary">Planned Start</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Planned Start
+                    </Typography>
                     <Typography variant="body1">
-                      {trip.planned_start_time 
-                        ? format(new Date(trip.planned_start_time), 'PPpp')
-                        : 'Not set'
-                      }
+                      {trip.planned_start_time
+                        ? format(new Date(trip.planned_start_time), "PPpp")
+                        : "Not set"}
                     </Typography>
                   </Box>
 
                   {trip.actual_start_time && (
                     <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" color="textSecondary">Actual Start</Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Actual Start
+                      </Typography>
                       <Typography variant="body1">
-                        {format(new Date(trip.actual_start_time), 'PPpp')}
+                        {format(new Date(trip.actual_start_time), "PPpp")}
                       </Typography>
                     </Box>
                   )}
 
                   {trip.planned_end_time && (
                     <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" color="textSecondary">Planned End</Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Planned End
+                      </Typography>
                       <Typography variant="body1">
-                        {format(new Date(trip.planned_end_time), 'PPpp')}
+                        {format(new Date(trip.planned_end_time), "PPpp")}
                       </Typography>
                     </Box>
                   )}
 
                   {trip.actual_end_time && (
                     <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" color="textSecondary">Actual End</Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Actual End
+                      </Typography>
                       <Typography variant="body1">
-                        {format(new Date(trip.actual_end_time), 'PPpp')}
+                        {format(new Date(trip.actual_end_time), "PPpp")}
                       </Typography>
                     </Box>
                   )}
@@ -393,30 +447,40 @@ const TripDetailsPage: React.FC = () => {
                   <Typography variant="h6" gutterBottom>
                     Driver Information
                   </Typography>
-                  
+
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary">Name</Typography>
-                    <Typography variant="body1">{trip.driver?.name || 'Unknown'}</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Name
+                    </Typography>
+                    <Typography variant="body1">
+                      {trip.driver?.name || "Unknown"}
+                    </Typography>
                   </Box>
-                  
+
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary">Current Cycle Hours</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Current Cycle Hours
+                    </Typography>
                     <Typography variant="body1">
                       {trip.current_cycle_used.toFixed(1)} / 70 hours
                     </Typography>
                   </Box>
 
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary">Created</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Created
+                    </Typography>
                     <Typography variant="body1">
-                      {format(new Date(trip.created_at), 'PPpp')}
+                      {format(new Date(trip.created_at), "PPpp")}
                     </Typography>
                   </Box>
 
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary">Last Updated</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Last Updated
+                    </Typography>
                     <Typography variant="body1">
-                      {format(new Date(trip.updated_at), 'PPpp')}
+                      {format(new Date(trip.updated_at), "PPpp")}
                     </Typography>
                   </Box>
                 </CardContent>
@@ -454,10 +518,12 @@ const TripDetailsPage: React.FC = () => {
                     <Card>
                       <CardContent>
                         <Typography variant="h6" gutterBottom>
-                          <LocalGasStation sx={{ mr: 1, verticalAlign: 'middle' }} />
+                          <LocalGasStation
+                            sx={{ mr: 1, verticalAlign: "middle" }}
+                          />
                           Fuel Stops ({route.fuel_stops.length})
                         </Typography>
-                        
+
                         <List dense>
                           {route.fuel_stops.map((stop: FuelStop) => (
                             <ListItem key={stop.id} divider>
@@ -466,7 +532,9 @@ const TripDetailsPage: React.FC = () => {
                               </ListItemIcon>
                               <ListItemText
                                 primary={stop.name}
-                                secondary={`Mile ${stop.distance_from_start.toFixed(0)} • ${stop.address}`}
+                                secondary={`Mile ${stop.distance_from_start.toFixed(
+                                  0
+                                )} • ${stop.address}`}
                               />
                             </ListItem>
                           ))}
@@ -482,10 +550,10 @@ const TripDetailsPage: React.FC = () => {
                     <Card>
                       <CardContent>
                         <Typography variant="h6" gutterBottom>
-                          <Hotel sx={{ mr: 1, verticalAlign: 'middle' }} />
+                          <Hotel sx={{ mr: 1, verticalAlign: "middle" }} />
                           Required Rest Stops ({route.rest_stops.length})
                         </Typography>
-                        
+
                         <List dense>
                           {route.rest_stops.map((stop: RestStop) => (
                             <ListItem key={stop.id} divider>
@@ -495,9 +563,13 @@ const TripDetailsPage: React.FC = () => {
                               <ListItemText
                                 primary={stop.rest_type_display}
                                 secondary={
-                                  `Mile ${stop.distance_from_start.toFixed(0)} • ` +
+                                  `Mile ${stop.distance_from_start.toFixed(
+                                    0
+                                  )} • ` +
                                   `${stop.required_duration_minutes}min • ` +
-                                  `After ${stop.hours_driven_before.toFixed(1)}h driving`
+                                  `After ${stop.hours_driven_before.toFixed(
+                                    1
+                                  )}h driving`
                                 }
                               />
                             </ListItem>
@@ -526,15 +598,30 @@ const TripDetailsPage: React.FC = () => {
                 <Grid size={{ xs: 12 }} key={log.id}>
                   <Card>
                     <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                      <Box
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        mb={2}
+                      >
                         <Typography variant="h6">
-                          ELD Log - {format(new Date(log.log_date), 'PP')}
+                          ELD Log - {format(new Date(log.log_date), "PP")}
                         </Typography>
                         <Box display="flex" gap={1}>
                           {log.is_certified ? (
-                            <Chip icon={<CheckCircle />} label="Certified" color="success" size="small" />
+                            <Chip
+                              icon={<CheckCircle />}
+                              label="Certified"
+                              color="success"
+                              size="small"
+                            />
                           ) : (
-                            <Chip icon={<Warning />} label="Not Certified" color="warning" size="small" />
+                            <Chip
+                              icon={<Warning />}
+                              label="Not Certified"
+                              color="warning"
+                              size="small"
+                            />
                           )}
                           <Button
                             size="small"
@@ -544,12 +631,17 @@ const TripDetailsPage: React.FC = () => {
                           </Button>
                         </Box>
                       </Box>
-                      
+
                       {logSheets[log.id] ? (
-                        <ELDLogChart logSheet={logSheets[log.id]} showDetails={false} />
+                        <ELDLogChart
+                          logSheet={logSheets[log.id]}
+                          showDetails={false}
+                        />
                       ) : (
                         <Typography variant="body2" color="textSecondary">
-                          ELD chart visualization for {format(new Date(log.log_date), 'PP')} - Log sheet not available
+                          ELD chart visualization for{" "}
+                          {format(new Date(log.log_date), "PP")} - Log sheet not
+                          available
                         </Typography>
                       )}
                     </CardContent>

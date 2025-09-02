@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -62,13 +62,7 @@ const ELDLogDetailsPage: React.FC = () => {
   const [certifyDialog, setCertifyDialog] = useState(false);
   const [logSheetLoading, setLogSheetLoading] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchLogDetails();
-    }
-  }, [id]);
-
-  const fetchLogDetails = async () => {
+  const fetchLogDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -90,7 +84,13 @@ const ELDLogDetailsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchLogDetails();
+    }
+  }, [id, fetchLogDetails]);
 
   const handleCertifyLog = async () => {
     if (!log) return;

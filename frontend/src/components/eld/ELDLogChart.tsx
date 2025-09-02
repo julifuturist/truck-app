@@ -3,21 +3,14 @@ import {
   Box,
   Paper,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   Grid,
   Card,
   CardContent,
-  Divider,
 } from '@mui/material';
 import { format } from 'date-fns';
 
-import { ELDLogSheet, ELDInterval, DutyStatusStyle } from '../../types';
+import { ELDLogSheet } from '../../types';
 
 interface ELDLogChartProps {
   logSheet: ELDLogSheet;

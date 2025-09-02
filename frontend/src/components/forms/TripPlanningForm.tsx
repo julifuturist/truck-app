@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Grid,
@@ -51,6 +51,15 @@ interface LocationOption {
   lng: number;
 }
 
+// Debounce function moved outside component to prevent recreation
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number): T {
+  let timeout: NodeJS.Timeout;
+  return ((...args: any[]) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  }) as T;
+}
+
 const TripPlanningForm: React.FC<TripPlanningFormProps> = ({ onTripPlanned }) => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(false);
@@ -95,46 +104,40 @@ const TripPlanningForm: React.FC<TripPlanningFormProps> = ({ onTripPlanned }) =>
     }
   };
 
-  // Location search functions with debouncing
-  const searchLocationsDebounced = React.useCallback(
-    debounce(async (query: string, setter: React.Dispatch<React.SetStateAction<LocationOption[]>>) => {
-      if (!query || query.trim().length < 3) {
-        setter([]);
-        return;
-      }
+  // Location search function
+  const searchAddresses = useCallback(async (query: string, setter: React.Dispatch<React.SetStateAction<LocationOption[]>>) => {
+    if (!query || query.trim().length < 3) {
+      setter([]);
+      return;
+    }
+    
+    setLocationLoading(true);
+    try {
+      console.log('Searching for locations:', query);
+      const results = await geocodingAPI.searchAddresses(query);
+      console.log('Location results:', results);
+      setter(results);
       
-      setLocationLoading(true);
-      try {
-        console.log('Searching for locations:', query);
-        const results = await geocodingAPI.searchAddresses(query);
-        console.log('Location results:', results);
-        setter(results);
-        
-        if (results.length === 0) {
-          console.warn('No location results found for:', query);
-        }
-      } catch (err) {
-        console.error('Location search error:', err);
-        setter([]);
-      } finally {
-        setLocationLoading(false);
+      if (results.length === 0) {
+        console.warn('No location results found for:', query);
       }
-    }, 500),
-    []
+    } catch (err) {
+      console.error('Location search error:', err);
+      setter([]);
+    } finally {
+      setLocationLoading(false);
+    }
+  }, []);
+
+  // Create debounced version using useMemo
+  const searchLocationsDebounced = useMemo(
+    () => debounce(searchAddresses, 500),
+    [searchAddresses]
   );
 
   const searchLocations = (query: string, setter: React.Dispatch<React.SetStateAction<LocationOption[]>>) => {
     searchLocationsDebounced(query, setter);
   };
-
-  // Debounce function
-  function debounce<T extends (...args: any[]) => void>(func: T, wait: number): T {
-    let timeout: NodeJS.Timeout;
-    return ((...args: any[]) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), wait);
-    }) as T;
-  }
 
   const onSubmit = async (data: any) => {
     setLoading(true);
