@@ -161,11 +161,45 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://localhost:3000",
+    # Production frontend domains
+    "https://truck-logs-8ygpgzvzj-juli-futurist-projects.vercel.app",
+]
+
+# Allow all Vercel preview deployments (they use random subdomains)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://truck-logs-.*\.vercel\.app$",
+    r"^https://.*\.juli-futurist-projects\.vercel\.app$",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
+# Allow common headers needed for API requests
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'cache-control',
+]
+
+# Allow common HTTP methods
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# In production, we use specific allowed origins for security
+# In development, we can allow all origins
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
 
 # Additional settings for deployment
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
