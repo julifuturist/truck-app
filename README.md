@@ -54,6 +54,7 @@ frontend/src/
 
 - Python 3.8+ with pip
 - Node.js 18+ with npm
+- PostgreSQL 12+ database server
 - Git
 
 ### Backend Setup
@@ -69,6 +70,10 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# Setup environment variables
+cp env.example .env
+# Edit .env with your PostgreSQL database credentials
+
 # Setup database
 python manage.py migrate
 
@@ -77,6 +82,65 @@ python create_sample_data.py
 
 # Start Django server
 python manage.py runserver 0.0.0.0:8000
+```
+
+### PostgreSQL Database Setup
+
+#### Option 1: Local PostgreSQL Installation
+
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+
+# macOS with Homebrew
+brew install postgresql
+brew services start postgresql
+
+# Create database and user
+sudo -u postgres psql
+CREATE DATABASE trucklog_db;
+CREATE USER postgres WITH ENCRYPTED PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE trucklog_db TO postgres;
+\q
+```
+
+#### Option 2: Docker PostgreSQL
+
+```bash
+# Run PostgreSQL in Docker
+docker run --name postgres-trucklog \
+  -e POSTGRES_PASSWORD=your_password \
+  -e POSTGRES_DB=trucklog_db \
+  -p 5432:5432 \
+  -d postgres:15
+
+# Stop the container
+docker stop postgres-trucklog
+
+# Start the container
+docker start postgres-trucklog
+```
+
+#### Environment Configuration
+
+Create a `.env` file in the project root with your database credentials:
+
+```env
+# Database Configuration (PostgreSQL)
+DATABASE_NAME=trucklog_db
+DATABASE_USER=postgres
+DATABASE_PASSWORD=your_password
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+
+# Django Settings
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+CORS_ALLOW_ALL_ORIGINS=True
+
+# External APIs
+OPENROUTE_API_KEY=your-openroute-api-key
 ```
 
 ### Frontend Setup
@@ -241,7 +305,11 @@ railway deploy
 ```
 DEBUG=False
 SECRET_KEY=your-secret-key
-DATABASE_URL=postgresql://...
+DATABASE_NAME=trucklog_db
+DATABASE_USER=postgres
+DATABASE_PASSWORD=your-db-password
+DATABASE_HOST=your-db-host
+DATABASE_PORT=5432
 CORS_ALLOW_ALL_ORIGINS=False
 OPENROUTE_API_KEY=your-api-key
 ```
