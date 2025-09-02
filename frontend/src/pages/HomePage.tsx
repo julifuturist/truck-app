@@ -58,12 +58,12 @@ const HomePage: React.FC = () => {
       const [tripsResponse, logsResponse, violationsResponse] = await Promise.all([
         tripAPI.getAll({ page: 1 }),
         eldLogAPI.getAll({ page: 1 }),
-        violationAPI.getAll(),
+        violationAPI.getAll({ page: 1 }),
       ]);
 
       const trips = tripsResponse.data.results || [];
       const logs = logsResponse.data.results || [];
-      const violations = violationsResponse.data || [];
+      const violations = violationsResponse.data.results || [];
 
       setRecentTrips(trips.slice(0, 5));
       setRecentLogs(logs.slice(0, 5));

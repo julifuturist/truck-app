@@ -187,7 +187,8 @@ export const violationAPI = {
     type?: string;
     severity?: string;
     resolved?: boolean;
-  }): Promise<AxiosResponse<HOSViolation[]>> => 
+    page?: number;
+  }): Promise<AxiosResponse<PaginatedResponse<HOSViolation>>> => 
     api.get('/violations/', { params }),
   
   getById: (id: string): Promise<AxiosResponse<HOSViolation>> => 
